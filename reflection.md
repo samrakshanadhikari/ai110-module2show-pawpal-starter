@@ -2,15 +2,49 @@
 
 ## 1. System Design
 
+### 1d. Building Blocks (main objects)
+
+- Pet
+  - Attributes: name, species, age, preferences, dietary requirements, medication list
+  - Methods: update_details(), add_preference(), is_hungry(), needs_medication_today()
+
+- Owner
+  - Attributes: name, available_hours_per_day, preferences, location
+  - Methods: update_availability(), set_preference(), get_today_window()
+
+- Task
+  - Attributes: task_id, type (walk/feed/med/enrichment/groom), duration, priority, due_time, notes, completed
+  - Methods: mark_completed(), reschedule(), update_details(), is_overdue()
+
+- Scheduler (or Planner)
+  - Attributes: tasks_list, time_budget, constraints, plan_output
+  - Methods: add_task(), remove_task(), generate_plan(), apply_constraints(), explain_plan()
+
+- DailyPlan (optional)
+  - Attributes: date, ordered_tasks, total_duration, completion_status
+  - Methods: summarize(), get_next_task(), remaining_time()
+
 **a. Initial design**
 
-- Briefly describe your initial UML design.
-- What classes did you include, and what responsibilities did you assign to each?
+The initial UML design uses a class diagram to model the PawPal+ system with five main classes: Owner, Pet, Task, Scheduler, and DailyPlan. The Owner class represents the pet owner and manages their availability and preferences. The Pet class holds information about the pet's details and needs. The Task class defines individual care tasks with attributes like type, duration, and priority. The Scheduler class handles the logic for generating daily plans based on tasks and constraints. The DailyPlan class represents the output schedule for a day. Relationships include Owner having Pets, Scheduler managing Tasks and generating DailyPlans, and DailyPlans containing Tasks.
+
+What classes did you include, and what responsibilities did you assign to each?
+
+- **Owner**: Manages owner information and preferences; provides methods for updating availability and getting time windows.
+- **Pet**: Stores pet details and needs; includes methods for updating info and checking status like hunger or medication needs.
+- **Task**: Represents care tasks; handles completion, rescheduling, and status checks.
+- **Scheduler**: Core logic for planning; adds/removes tasks, generates plans, applies constraints, and explains decisions.
+- **DailyPlan**: Output of the scheduler; summarizes the day's tasks and tracks progress.
 
 **b. Design changes**
 
-- Did your design change during implementation?
-- If yes, describe at least one change and why you made it.
+No design changes were made during this initial implementation phase. The skeleton classes were created directly from the UML diagram without modifications, as the AI review confirmed the structure was appropriate and complete for the current requirements.
+
+**c. Core actions**
+
+- **Track Pet Care Tasks**: The app should allow users to track various pet care tasks such as walks, feeding, medication, enrichment activities, and grooming. This feature will help pet owners stay organized and ensure that all necessary tasks are completed on time.
+- **Consider Constraints**: The app should take into account the user's available time, task priority, and personal preferences when suggesting a daily care plan. This ensures that the recommendations are tailored to the user's specific situation.
+- **Produce a Daily Plan**: The app should generate a daily plan for pet care tasks and provide explanations for the chosen tasks. This feature will help users understand the reasoning behind the recommendations and improve their adherence to the care schedule.
 
 ---
 
