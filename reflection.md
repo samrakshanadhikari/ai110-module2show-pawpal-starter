@@ -26,6 +26,69 @@
 
 **a. Initial design**
 
+```mermaid
+classDiagram
+    class Owner {
+        +name: str
+        +available_hours_per_day: int
+        +preferences: list
+        +location: str
+        +update_availability()
+        +set_preference()
+        +get_today_window()
+    }
+    class Pet {
+        +name: str
+        +species: str
+        +age: int
+        +preferences: list
+        +dietary_requirements: list
+        +medication_list: list
+        +update_details()
+        +add_preference()
+        +is_hungry()
+        +needs_medication_today()
+    }
+    class Task {
+        +task_id: int
+        +type: str
+        +duration: int
+        +priority: int
+        +due_time: str
+        +notes: str
+        +completed: bool
+        +mark_completed()
+        +reschedule()
+        +update_details()
+        +is_overdue()
+    }
+    class Scheduler {
+        +tasks_list: list
+        +time_budget: int
+        +constraints: dict
+        +plan_output: dict
+        +add_task()
+        +remove_task()
+        +generate_plan()
+        +apply_constraints()
+        +explain_plan()
+    }
+    class DailyPlan {
+        +date: str
+        +ordered_tasks: list
+        +total_duration: int
+        +completion_status: str
+        +summarize()
+        +get_next_task()
+        +remaining_time()
+    }
+    Owner --> Pet : has
+    Owner --> Scheduler : uses
+    Scheduler --> Task : manages
+    Scheduler --> DailyPlan : generates
+    DailyPlan --> Task : contains
+```
+
 The initial UML design uses a class diagram to model the PawPal+ system with five main classes: Owner, Pet, Task, Scheduler, and DailyPlan. The Owner class represents the pet owner and manages their availability and preferences. The Pet class holds information about the pet's details and needs. The Task class defines individual care tasks with attributes like type, duration, and priority. The Scheduler class handles the logic for generating daily plans based on tasks and constraints. The DailyPlan class represents the output schedule for a day. Relationships include Owner having Pets, Scheduler managing Tasks and generating DailyPlans, and DailyPlans containing Tasks.
 
 What classes did you include, and what responsibilities did you assign to each?
