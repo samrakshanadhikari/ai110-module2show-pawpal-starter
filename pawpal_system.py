@@ -61,26 +61,42 @@ class Task:
         pass
 
 class Scheduler:
-    def __init__(self):
+    def __init__(self, owner: Owner):
+        self.owner = owner
         self.tasks_list: List[Task] = []
-        self.time_budget: int = 0
-        self.constraints: Dict = {}
+        self.time_budget: int = owner.available_hours_per_day * 60  # in minutes
+        self.constraints: Dict = {"max_priority": 5, "min_duration": 5}  # example constraints
         self.plan_output: Dict = {}
 
     def add_task(self, task: Task):
-        pass
+        self.tasks_list.append(task)
 
     def remove_task(self, task_id: int):
-        pass
+        self.tasks_list = [t for t in self.tasks_list if t.task_id != task_id]
 
-    def generate_plan(self) -> 'DailyPlan':
-        pass
+    def generate_plan(self) -> DailyPlan:
+        # Sort tasks by priority (higher first), then by duration (shorter first for better fit)
+        sorted_tasks = sorted(self.tasks_list, key=lambda t: (-t.priority, t.duration))
+        selected_tasks = []
+        total_time = 0
+        for task in sorted_tasks:
+            if total_time + task.duration <= self.time_budget:
+                selected_tasks.append(task)
+                total_time += task.duration
+            else:
+                break  # can't fit more
+        from datetime import date
+        today = date.today().isoformat()
+        plan = DailyPlan(date=today, ordered_tasks=selected_tasks, total_duration=total_time)
+        self.plan_output = {"plan": plan, "reason": f"Selected {len(selected_tasks)} tasks based on priority and time budget."}
+        return plan
 
     def apply_constraints(self):
-        pass
+        # Filter tasks based on constraints, e.g., priority <= max_priority
+        self.tasks_list = [t for t in self.tasks_list if t.priority <= self.constraints.get("max_priority", 5)]
 
     def explain_plan(self) -> str:
-        pass
+        return self.plan_output.get("reason", "No plan generated yet.")
 
 @dataclass
 class DailyPlan:

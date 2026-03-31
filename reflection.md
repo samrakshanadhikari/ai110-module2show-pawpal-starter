@@ -52,13 +52,11 @@ No design changes were made during this initial implementation phase. The skelet
 
 **a. Constraints and priorities**
 
-- What constraints does your scheduler consider (for example: time, priority, preferences)?
-- How did you decide which constraints mattered most?
+The scheduler considers time constraints (owner's available hours per day, converted to minutes), task priority (1-5, higher is more important), and basic constraints like maximum priority allowed. It prioritizes time feasibility first, then sorts tasks by priority descending to ensure critical tasks (e.g., medication) are included before optional ones (e.g., grooming). I decided time mattered most because without fitting into the day, the plan is unusable; priority ensures essential care isn't skipped.
 
 **b. Tradeoffs**
 
-- Describe one tradeoff your scheduler makes.
-- Why is that tradeoff reasonable for this scenario?
+The scheduler prioritizes high-priority tasks, potentially excluding lower-priority ones that could fit into remaining time. This tradeoff is reasonable for pet care because critical tasks (like feeding or meds) must be done daily for health, while optional activities can be deferred without immediate harm.
 
 ---
 
