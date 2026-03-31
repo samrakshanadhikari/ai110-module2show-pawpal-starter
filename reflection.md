@@ -78,13 +78,11 @@ The scheduler prioritizes high-priority tasks, potentially excluding lower-prior
 
 **a. What you tested**
 
-- What behaviors did you test?
-- Why were these tests important?
+I tested the basic scheduling behavior by creating sample Owner, Tasks, and Scheduler instances, adding tasks with different priorities, and generating a plan. This verified that tasks are sorted by priority (higher first) and fit within the time budget without exceeding it. These tests were important to ensure the core planning logic functions correctly and produces feasible daily plans.
 
 **b. Confidence**
 
-- How confident are you that your scheduler works correctly?
-- What edge cases would you test next if you had more time?
+I'm moderately confident the scheduler works correctly for basic cases, as the test showed proper task selection and ordering. However, it lacks robustness for edge cases. Next, I'd test scenarios like no tasks available, tasks exceeding total time, invalid priorities, or owner time constraints to ensure graceful handling.
 
 ---
 

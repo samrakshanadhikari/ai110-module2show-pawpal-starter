@@ -60,6 +60,22 @@ class Task:
     def is_overdue(self) -> bool:
         pass
 
+@dataclass
+class DailyPlan:
+    date: str
+    ordered_tasks: List[Task]
+    total_duration: int
+    completion_status: str = "pending"
+
+    def summarize(self) -> str:
+        pass
+
+    def get_next_task(self) -> Optional[Task]:
+        pass
+
+    def remaining_time(self) -> int:
+        pass
+
 class Scheduler:
     def __init__(self, owner: Owner):
         self.owner = owner
@@ -97,19 +113,3 @@ class Scheduler:
 
     def explain_plan(self) -> str:
         return self.plan_output.get("reason", "No plan generated yet.")
-
-@dataclass
-class DailyPlan:
-    date: str
-    ordered_tasks: List[Task]
-    total_duration: int
-    completion_status: str = "pending"
-
-    def summarize(self) -> str:
-        pass
-
-    def get_next_task(self) -> Optional[Task]:
-        pass
-
-    def remaining_time(self) -> int:
-        pass
