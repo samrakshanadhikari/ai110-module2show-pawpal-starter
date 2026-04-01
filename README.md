@@ -50,3 +50,15 @@ PawPal+ now includes a few lightweight scheduling algorithms to make plans more 
 - Filter tasks by pet name or completion status
 - Auto-create the next instance of daily and weekly recurring tasks when one is completed
 - Detect exact-time task conflicts and return warning messages instead of failing
+
+## Testing PawPal+
+
+Run the automated test suite with:
+
+```bash
+python -m pytest
+```
+
+The tests cover task completion, adding tasks to pets, chronological sorting, filtering by pet and status, recurring daily tasks, empty schedules, and exact-time conflict detection.
+
+Confidence Level: 4/5 stars. The current suite gives strong coverage for the core scheduling behaviors, but there is still room to add more edge-case testing for invalid inputs, overlapping durations, and Streamlit UI workflows.
