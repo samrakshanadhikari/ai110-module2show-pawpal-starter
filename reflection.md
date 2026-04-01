@@ -101,7 +101,9 @@ What classes did you include, and what responsibilities did you assign to each?
 
 **b. Design changes**
 
-No design changes were made during this initial implementation phase. The skeleton classes were created directly from the UML diagram without modifications, as the AI review confirmed the structure was appropriate and complete for the current requirements.
+Several design changes were made after the initial UML draft. The biggest update was moving from a very simple task model to a richer `Task` object with `description`, `frequency`, `due_date`, and helper methods for recurrence. I also shifted more responsibility into `Scheduler`, adding sorting, filtering, recurring-task handling, and conflict detection so the planning rules lived in one place instead of being scattered across the UI or demo script. Those changes made the final system more realistic and closer to how a real planning app would separate data from decision logic.
+
+The final UML was updated to reflect those changes and saved as `uml_final.svg` in the project folder.
 
 **c. Core actions**
 
@@ -115,7 +117,7 @@ No design changes were made during this initial implementation phase. The skelet
 
 **a. Constraints and priorities**
 
-The scheduler considers time constraints (owner's available hours per day, converted to minutes), task priority (1-5, higher is more important), and basic constraints like maximum priority allowed. It prioritizes time feasibility first, then sorts tasks by priority descending to ensure critical tasks (e.g., medication) are included before optional ones (e.g., grooming). I decided time mattered most because without fitting into the day, the plan is unusable; priority ensures essential care isn't skipped.
+The scheduler considers the owner's daily time budget, task due date and due time, task priority, recurrence, and basic conflict visibility. It first sorts tasks into a sensible chronological order and then trims the plan so it still fits into the owner's available time. I treated time feasibility as the most important constraint because a schedule that cannot fit into the day is not useful, and then used priority so essential care like feeding or medication stays ahead of optional tasks.
 
 **b. Tradeoffs**
 
@@ -127,13 +129,11 @@ The scheduler uses lightweight conflict detection that only flags exact matches 
 
 **a. How you used AI**
 
-- How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
-- What kinds of prompts or questions were most helpful?
+I used AI most heavily for implementation planning, method design, and test brainstorming. Copilot-style prompts were especially helpful when I wanted to translate a general goal into a concrete Python pattern, such as sorting `HH:MM` strings with a lambda key, deciding where recurrence logic should live, or thinking through lightweight conflict detection. The most useful prompts were short and specific, for example asking how a scheduler should retrieve tasks from an owner's pets or what edge cases mattered most for recurring tasks and sorting.
 
 **b. Judgment and verification**
 
-- Describe one moment where you did not accept an AI suggestion as-is.
-- How did you evaluate or verify what the AI suggested?
+One example of human judgment came up during the algorithmic phase. A more advanced approach would have been to detect overlapping task durations rather than only exact time conflicts, but I intentionally kept the simpler exact-match warning because it was easier to explain, test, and maintain for this project. I evaluated suggestions by checking whether they made the code clearer, whether they matched the assignment scope, and whether I could verify them with `main.py` output or automated pytest checks before keeping them.
 
 ---
 
@@ -141,11 +141,11 @@ The scheduler uses lightweight conflict detection that only flags exact matches 
 
 **a. What you tested**
 
-I tested the basic scheduling behavior by creating sample Owner, Tasks, and Scheduler instances, adding tasks with different priorities, and generating a plan. This verified that tasks are sorted by priority (higher first) and fit within the time budget without exceeding it. These tests were important to ensure the core planning logic functions correctly and produces feasible daily plans.
+I tested task completion, task addition, chronological sorting, filtering by pet and status, recurring daily task creation, empty schedules, exact-time conflict detection, and no-conflict cases. These tests matter because they cover both the basic happy path and the core "smart" behaviors that make the scheduler useful, especially sorting and recurrence.
 
 **b. Confidence**
 
-I'm moderately confident the scheduler works correctly for basic cases, as the test showed proper task selection and ordering. However, it lacks robustness for edge cases. Next, I'd test scenarios like no tasks available, tasks exceeding total time, invalid priorities, or owner time constraints to ensure graceful handling.
+My confidence level is 4 out of 5. The current test suite gives me strong confidence in the main backend behaviors, and the Streamlit app now exposes those same features clearly. If I had more time, I would add tests for invalid time formats, overlapping-duration conflicts, and more UI-driven workflows to increase confidence even further.
 
 ---
 
@@ -153,12 +153,16 @@ I'm moderately confident the scheduler works correctly for basic cases, as the t
 
 **a. What went well**
 
-- What part of this project are you most satisfied with?
+I am most satisfied with the way the project evolved from a simple UML sketch into a small but coherent system. The backend classes, CLI demo, tests, and Streamlit interface now reinforce each other instead of feeling like disconnected pieces.
 
 **b. What you would improve**
 
-- If you had another iteration, what would you improve or redesign?
+With another iteration, I would improve the conflict detection so it understands overlapping durations instead of only exact matches, and I would make the UI support editing or deleting tasks directly. I would also make the schedule explanation richer so the app could better justify why some tasks were included and others were left out.
 
 **c. Key takeaway**
 
-- What is one important thing you learned about designing systems or working with AI on this project?
+My biggest takeaway is that AI works best as a fast design and coding assistant, not as the final architect. The project stayed organized because I kept deciding the structure, checking whether suggestions matched the scope, and using separate phase-based workflows to keep each step focused instead of letting the implementation drift.
+
+**d. AI strategy**
+
+The most effective Copilot-style features for this project were quick method scaffolding, targeted debugging help, and test generation prompts. One AI suggestion I effectively rejected was the temptation to make the scheduler more complex than the assignment required; I kept the design cleaner by choosing readable, lightweight algorithms over maximum cleverness. Using separate chat sessions or phase-based work helped me stay organized because each phase had its own goal: design, implementation, integration, algorithms, testing, and polish. That separation made it easier to act as the lead architect, since I could evaluate AI suggestions within the context of one clear milestone instead of mixing every problem together at once.

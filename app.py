@@ -1,3 +1,5 @@
+from datetime import date
+
 import streamlit as st
 
 from pawpal_system import Owner, Pet, Scheduler, Task
@@ -28,29 +30,65 @@ def get_next_task_id() -> int:
     return task_id
 
 
+def task_rows(owner: Owner, tasks: list[Task]) -> list[dict[str, str | int]]:
+    """Build table rows for task display."""
+    pet_lookup = {
+        task.task_id: pet.name
+        for pet in owner.pets
+        for task in pet.tasks
+    }
+    return [
+        {
+            "pet": pet_lookup.get(task.task_id, "Unknown"),
+            "task": task.description,
+            "due_date": task.due_date.isoformat(),
+            "due_time": task.due_time or "Any time",
+            "duration": task.duration,
+            "priority": task.priority,
+            "frequency": task.frequency,
+            "status": task.status_label(),
+        }
+        for task in tasks
+    ]
+
+
+def incomplete_task_options(owner: Owner) -> list[tuple[str, int]]:
+    """Return labels and ids for incomplete tasks."""
+    options: list[tuple[str, int]] = []
+    for pet in owner.pets:
+        for task in pet.tasks:
+            if not task.completed:
+                label = (
+                    f"{pet.name}: {task.description} "
+                    f"({task.due_date.isoformat()} {task.due_time or 'Any time'})"
+                )
+                options.append((label, task.task_id))
+    return options
+
+
 st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="centered")
 
 if "next_task_id" not in st.session_state:
     st.session_state.next_task_id = 1
 
 owner = get_owner()
+scheduler = Scheduler(owner)
 
 st.title("🐾 PawPal+")
+st.caption("A polished pet-care planner powered by your Python scheduling logic.")
 
 st.markdown(
     """
-Welcome to PawPal+.
-
-This version connects the Streamlit interface to your Python classes so pets and tasks
-persist in session memory while you use the app.
+This UI now reflects the smarter backend features you built: sorted schedules,
+filters, recurring tasks, and conflict warnings.
 """
 )
 
-with st.expander("Scenario", expanded=True):
+with st.expander("Scenario", expanded=False):
     st.markdown(
         """
-**PawPal+** is a pet care planning assistant. It helps a pet owner plan care tasks
-for their pet(s) based on constraints like time, priority, and preferences.
+**PawPal+** helps a busy pet owner organize care tasks based on time,
+priority, recurrence, and simple conflict checks.
 """
     )
 
@@ -95,7 +133,6 @@ if add_pet_submitted:
         st.success(f"Added {pet_name.strip()} to {owner.name}'s household.")
 
 if owner.pets:
-    st.write("Current pets:")
     st.table(
         [
             {"name": pet.name, "species": pet.species, "age": pet.age, "tasks": len(pet.tasks)}
@@ -113,14 +150,17 @@ if owner.pets:
     with st.form("task_form", clear_on_submit=True):
         task_pet_name = st.selectbox("Choose a pet", [pet.name for pet in owner.pets])
         task_description = st.text_input("Task description", value="Morning walk")
-        due_time = st.text_input("Due time (HH:MM)", value="08:00")
+        col1, col2 = st.columns(2)
+        with col1:
+            due_date_value = st.date_input("Due date", value=date.today())
+        with col2:
+            due_time = st.text_input("Due time (HH:MM)", value="08:00")
         duration = st.number_input("Duration (minutes)", min_value=1, max_value=240, value=20)
         frequency = st.selectbox("Frequency", ["daily", "weekly", "as needed"])
         priority_label = st.selectbox("Priority", ["low", "medium", "high"], index=2)
         add_task_submitted = st.form_submit_button("Add task")
 
     if add_task_submitted:
-        scheduler = Scheduler(owner)
         scheduler.add_task(
             task_pet_name,
             Task(
@@ -128,6 +168,7 @@ if owner.pets:
                 description=task_description.strip() or "Untitled task",
                 duration=int(duration),
                 due_time=due_time.strip() or None,
+                due_date=due_date_value,
                 frequency=frequency,
                 priority=priority_to_number(priority_label),
             ),
@@ -136,48 +177,65 @@ if owner.pets:
 else:
     st.info("Add a pet before creating tasks.")
 
-all_tasks = owner.get_all_tasks()
-if all_tasks:
-    st.write("Current tasks:")
-    st.table(
-        [
-            {
-                "pet": pet.name,
-                "task": task.description,
-                "due_time": task.due_time or "Any time",
-                "duration": task.duration,
-                "priority": task.priority,
-                "status": task.status_label(),
-            }
-            for pet in owner.pets
-            for task in pet.tasks
-        ]
-    )
+st.divider()
+
+st.subheader("Task Dashboard")
+
+pet_filter = st.selectbox(
+    "Filter by pet",
+    ["All pets"] + [pet.name for pet in owner.pets],
+)
+status_filter = st.selectbox("Filter by status", ["All", "Pending", "Completed"])
+
+completed_value = None
+if status_filter == "Pending":
+    completed_value = False
+elif status_filter == "Completed":
+    completed_value = True
+
+filtered_tasks = scheduler.filter_tasks(
+    pet_name=None if pet_filter == "All pets" else pet_filter,
+    completed=completed_value,
+)
+
+if filtered_tasks:
+    st.table(task_rows(owner, filtered_tasks))
 else:
-    st.info("No tasks yet. Add one above.")
+    st.info("No tasks match the current filters.")
+
+conflicts = scheduler.detect_conflicts()
+if conflicts:
+    for warning in conflicts:
+        st.warning(warning)
+else:
+    st.success("No scheduling conflicts detected right now.")
+
+task_options = incomplete_task_options(owner)
+if task_options:
+    selected_task_label = st.selectbox(
+        "Mark a task complete",
+        [label for label, _ in task_options],
+    )
+    if st.button("Complete selected task"):
+        selected_task_id = dict(task_options)[selected_task_label]
+        next_task = scheduler.mark_task_complete(selected_task_id)
+        st.success("Task marked complete.")
+        if next_task is not None:
+            st.info(
+                f"Recurring task created for {next_task.due_date.isoformat()} "
+                f"at {next_task.due_time or 'Any time'}."
+            )
 
 st.divider()
 
-st.subheader("Build Schedule")
+st.subheader("Today's Sorted Schedule")
 
 if st.button("Generate schedule"):
-    scheduler = Scheduler(owner)
     plan = scheduler.generate_plan()
-
     if plan.ordered_tasks:
         st.success("Schedule generated.")
         st.write(plan.summarize())
-        st.write(scheduler.explain_plan())
-        st.table(
-            [
-                {
-                    "task": task.description,
-                    "due_time": task.due_time or "Any time",
-                    "duration": f"{task.duration} min",
-                    "priority": task.priority,
-                }
-                for task in plan.ordered_tasks
-            ]
-        )
+        st.caption(scheduler.explain_plan())
+        st.table(task_rows(owner, plan.ordered_tasks))
     else:
         st.warning("Add at least one task before generating a schedule.")

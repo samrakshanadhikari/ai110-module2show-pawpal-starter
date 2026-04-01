@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="820" viewBox="0 0 1200 820">
+  <style>
+    .box { fill: #f8fafc; stroke: #1f2937; stroke-width: 2; rx: 12; ry: 12; }
+    .title { font: 700 22px Arial, sans-serif; fill: #111827; }
+    .text { font: 16px Arial, sans-serif; fill: #374151; }
+    .line { stroke: #4b5563; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+    .label { font: 15px Arial, sans-serif; fill: #1f2937; }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#4b5563" />
+    </marker>
+  </defs>
+
+  <rect class="box" x="50" y="60" width="280" height="220" />
+  <text class="title" x="75" y="95">Owner</text>
+  <text class="text" x="75" y="130">+ name: str</text>
+  <text class="text" x="75" y="155">+ available_hours_per_day: int</text>
+  <text class="text" x="75" y="180">+ preferences: List[str]</text>
+  <text class="text" x="75" y="205">+ location: str</text>
+  <text class="text" x="75" y="230">+ pets: List[Pet]</text>
+  <text class="text" x="75" y="265">+ add_pet()</text>
+  <text class="text" x="75" y="290">+ get_all_tasks()</text>
+
+  <rect class="box" x="430" y="60" width="300" height="280" />
+  <text class="title" x="455" y="95">Pet</text>
+  <text class="text" x="455" y="130">+ name: str</text>
+  <text class="text" x="455" y="155">+ species: str</text>
+  <text class="text" x="455" y="180">+ age: int</text>
+  <text class="text" x="455" y="205">+ tasks: List[Task]</text>
+  <text class="text" x="455" y="240">+ add_task()</text>
+  <text class="text" x="455" y="265">+ get_tasks()</text>
+  <text class="text" x="455" y="290">+ is_hungry()</text>
+  <text class="text" x="455" y="315">+ needs_medication_today()</text>
+
+  <rect class="box" x="820" y="40" width="320" height="360" />
+  <text class="title" x="845" y="75">Task</text>
+  <text class="text" x="845" y="110">+ task_id: int</text>
+  <text class="text" x="845" y="135">+ description: str</text>
+  <text class="text" x="845" y="160">+ duration: int</text>
+  <text class="text" x="845" y="185">+ due_date: date</text>
+  <text class="text" x="845" y="210">+ due_time: Optional[str]</text>
+  <text class="text" x="845" y="235">+ frequency: str</text>
+  <text class="text" x="845" y="260">+ priority: int</text>
+  <text class="text" x="845" y="285">+ completed: bool</text>
+  <text class="text" x="845" y="320">+ mark_complete()</text>
+  <text class="text" x="845" y="345">+ next_due_date()</text>
+  <text class="text" x="845" y="370">+ spawn_next_occurrence()</text>
+
+  <rect class="box" x="120" y="470" width="360" height="260" />
+  <text class="title" x="145" y="505">Scheduler</text>
+  <text class="text" x="145" y="540">+ owner: Owner</text>
+  <text class="text" x="145" y="565">+ time_budget: int</text>
+  <text class="text" x="145" y="590">+ tasks_list: List[Task]</text>
+  <text class="text" x="145" y="625">+ sort_by_time()</text>
+  <text class="text" x="145" y="650">+ filter_tasks()</text>
+  <text class="text" x="145" y="675">+ mark_task_complete()</text>
+  <text class="text" x="145" y="700">+ detect_conflicts()</text>
+
+  <rect class="box" x="620" y="500" width="300" height="210" />
+  <text class="title" x="645" y="535">DailyPlan</text>
+  <text class="text" x="645" y="570">+ date: str</text>
+  <text class="text" x="645" y="595">+ ordered_tasks: List[Task]</text>
+  <text class="text" x="645" y="620">+ total_duration: int</text>
+  <text class="text" x="645" y="655">+ summarize()</text>
+  <text class="text" x="645" y="680">+ remaining_time()</text>
+
+  <path class="line" d="M330 170 L430 170" />
+  <text class="label" x="355" y="155">has many</text>
+
+  <path class="line" d="M730 190 L820 190" />
+  <text class="label" x="748" y="175">owns tasks</text>
+
+  <path class="line" d="M270 470 L220 280" />
+  <text class="label" x="155" y="380">uses</text>
+
+  <path class="line" d="M480 600 L620 600" />
+  <text class="label" x="520" y="585">generates</text>
+
+  <path class="line" d="M480 560 L820 360" />
+  <text class="label" x="620" y="470">sorts / filters / completes</text>
+
+  <path class="line" d="M920 500 L980 400" />
+  <text class="label" x="965" y="470">contains</text>
+</svg>
