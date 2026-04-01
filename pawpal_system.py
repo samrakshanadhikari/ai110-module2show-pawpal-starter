@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import date, datetime
+from dataclasses import dataclass, field, replace
+from datetime import date, datetime, timedelta
 from typing import List, Optional
 
 
@@ -23,6 +23,7 @@ class Task:
     frequency: str = "daily"
     priority: int = 3
     completed: bool = False
+    due_date: date = field(default_factory=date.today)
 
     def mark_complete(self) -> None:
         """Mark the task as completed."""
@@ -47,6 +48,12 @@ class Task:
         if self.completed or not self.due_time:
             return False
 
+        today = date.today()
+        if self.due_date < today:
+            return True
+        if self.due_date > today:
+            return False
+
         if current_time is None:
             current_time = datetime.now().strftime("%H:%M")
 
@@ -55,6 +62,28 @@ class Task:
     def status_label(self) -> str:
         """Return a short human-readable status label."""
         return "done" if self.completed else "pending"
+
+    def next_due_date(self) -> Optional[date]:
+        """Return the next due date for recurring tasks."""
+        frequency = self.frequency.lower()
+        if frequency == "daily":
+            return self.due_date + timedelta(days=1)
+        if frequency == "weekly":
+            return self.due_date + timedelta(weeks=1)
+        return None
+
+    def spawn_next_occurrence(self, next_task_id: int) -> Optional[Task]:
+        """Create the next recurring task instance when applicable."""
+        next_date = self.next_due_date()
+        if next_date is None:
+            return None
+
+        return replace(
+            self,
+            task_id=next_task_id,
+            completed=False,
+            due_date=next_date,
+        )
 
 
 @dataclass
@@ -190,6 +219,38 @@ class Scheduler:
         self.tasks_list = self.owner.get_all_tasks(include_completed=False)
         return list(self.tasks_list)
 
+    def _next_task_id(self) -> int:
+        """Return the next available task id across all pets."""
+        all_tasks = self.owner.get_all_tasks(include_completed=True)
+        if not all_tasks:
+            return 1
+        return max(task.task_id for task in all_tasks) + 1
+
+    def sort_by_time(self, tasks: Optional[List[Task]] = None) -> List[Task]:
+        """Return tasks sorted by due date, due time, and priority."""
+        tasks_to_sort = list(tasks if tasks is not None else self.refresh_tasks())
+        return sorted(
+            tasks_to_sort,
+            key=lambda task: (task.due_date, _time_sort_key(task.due_time), -task.priority, task.task_id),
+        )
+
+    def filter_tasks(
+        self,
+        *,
+        completed: Optional[bool] = None,
+        pet_name: Optional[str] = None,
+    ) -> List[Task]:
+        """Filter tasks by completion state and/or pet name."""
+        filtered_tasks: List[Task] = []
+        for pet in self.owner.pets:
+            if pet_name and pet.name.lower() != pet_name.lower():
+                continue
+            for task in pet.tasks:
+                if completed is not None and task.completed != completed:
+                    continue
+                filtered_tasks.append(task)
+        return self.sort_by_time(filtered_tasks)
+
     def add_task(self, pet_name: str, task: Task) -> None:
         """Add a task to a specific pet by name."""
         for pet in self.owner.pets:
@@ -209,6 +270,47 @@ class Scheduler:
                     return
         raise ValueError(f"Task id {task_id} was not found.")
 
+    def mark_task_complete(self, task_id: int) -> Optional[Task]:
+        """Complete a task and create the next recurring task when needed."""
+        for pet in self.owner.pets:
+            for task in pet.tasks:
+                if task.task_id == task_id:
+                    task.mark_complete()
+                    next_task = task.spawn_next_occurrence(self._next_task_id())
+                    if next_task is not None:
+                        pet.add_task(next_task)
+                    self.refresh_tasks()
+                    return next_task
+        raise ValueError(f"Task id {task_id} was not found.")
+
+    def detect_conflicts(self) -> List[str]:
+        """Return warning messages for tasks that share the same scheduled time."""
+        scheduled_items: List[tuple[str, Task]] = []
+        for pet in self.owner.pets:
+            for task in pet.get_tasks(include_completed=False):
+                if task.due_time:
+                    scheduled_items.append((pet.name, task))
+
+        sorted_items = sorted(
+            scheduled_items,
+            key=lambda item: (item[1].due_date, item[1].due_time, item[0], item[1].task_id),
+        )
+
+        warnings: List[str] = []
+        for current, nxt in zip(sorted_items, sorted_items[1:]):
+            current_pet, current_task = current
+            next_pet, next_task = nxt
+            if (
+                current_task.due_date == next_task.due_date
+                and current_task.due_time == next_task.due_time
+            ):
+                warnings.append(
+                    f"Conflict warning: {current_pet}'s '{current_task.description}' and "
+                    f"{next_pet}'s '{next_task.description}' are both scheduled for "
+                    f"{current_task.due_date.isoformat()} at {current_task.due_time}."
+                )
+        return warnings
+
     def apply_constraints(self, tasks: Optional[List[Task]] = None) -> List[Task]:
         """Trim tasks to fit within the owner's available time."""
         tasks_to_use = list(tasks if tasks is not None else self.refresh_tasks())
@@ -224,12 +326,8 @@ class Scheduler:
 
     def generate_plan(self) -> DailyPlan:
         """Build a time-ordered daily plan."""
-        tasks = self.refresh_tasks()
-        sorted_tasks = sorted(
-            tasks,
-            key=lambda task: (_time_sort_key(task.due_time), -task.priority, task.task_id),
-        )
-        constrained_tasks = self.apply_constraints(sorted_tasks)
+        tasks = self.sort_by_time(self.refresh_tasks())
+        constrained_tasks = self.apply_constraints(tasks)
         total_duration = sum(task.duration for task in constrained_tasks)
         self.plan_output = DailyPlan(
             date=date.today().isoformat(),
@@ -246,7 +344,7 @@ class Scheduler:
         assert self.plan_output is not None
         lines = [
             f"Schedule built for {self.owner.name} with {self.time_budget} available minute(s).",
-            "Tasks are ordered by due time first, then by priority.",
+            "Tasks are ordered by due date and time first, then by priority.",
         ]
 
         unscheduled = len(self.tasks_list) - len(self.plan_output.ordered_tasks)
@@ -254,5 +352,9 @@ class Scheduler:
             lines.append(
                 f"{unscheduled} task(s) were left out because they exceeded the daily time budget."
             )
+
+        conflicts = self.detect_conflicts()
+        if conflicts:
+            lines.append(f"{len(conflicts)} conflict warning(s) detected in the task list.")
 
         return "\n".join(lines)

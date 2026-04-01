@@ -119,7 +119,7 @@ The scheduler considers time constraints (owner's available hours per day, conve
 
 **b. Tradeoffs**
 
-The scheduler prioritizes high-priority tasks, potentially excluding lower-priority ones that could fit into remaining time. This tradeoff is reasonable for pet care because critical tasks (like feeding or meds) must be done daily for health, while optional activities can be deferred without immediate harm.
+The scheduler uses lightweight conflict detection that only flags exact matches on date and start time instead of calculating overlapping durations. That tradeoff keeps the logic easier to read and debug for this project, even though it means a task at 8:00 for 30 minutes and another at 8:15 would not be treated as a conflict yet.
 
 ---
 
